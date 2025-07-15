@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SSH Key Request</title>
+        {#bundle /}
+    </head>
+    <body>
+        <div class="container">
+            <h1>SSH Key Request</h1>
+
+            <form id="sshKeyForm" class="form">
+                <div class="form-group">
+                    <label for="userId">User ID:</label>
+                    <input type="text" id="userId" name="userId" placeholder="Enter your user ID" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="serverSelect">Server:</label>
+                    <select id="serverSelect" name="server" required>
+                        <option value="">Select a server</option>
+                        {#for server in servers}
+                            <option value="{server}">{server}</option>
+                        {/for}
+                    </select>
+                </div>
+
+                <button type="submit" id="generateBtn" class="btn-primary">Generate SSH Key</button>
+            </form>
+
+            <div id="downloadSection" class="download-section hidden">
+                <h2>Key Generated Successfully</h2>
+                <div class="key-info">
+                    <p><strong>Server:</strong> <span id="selectedServer"></span></p>
+                    <p><strong>User ID:</strong> <span id="selectedUserId"></span></p>
+                    <p><strong>Key Type:</strong> RSA 2048-bit</p>
+                    <p><strong>Generated:</strong> <span id="generatedTime"></span></p>
+                </div>
+                <div class="download-buttons">
+                    <a href="#" id="downloadPrivateKey" class="btn-download" download>Download Private Key</a>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
