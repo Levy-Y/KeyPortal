@@ -29,6 +29,7 @@ public class KeyPollEndpoint {
         if (keys.isEmpty()) {
             return Response.status(Response.Status.NO_CONTENT).build();
         } else {
+
             return Response.ok(keys).build();
         }
     }

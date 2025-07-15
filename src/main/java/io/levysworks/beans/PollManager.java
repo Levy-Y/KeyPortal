@@ -5,6 +5,8 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -18,7 +20,14 @@ public class PollManager {
     private final ConcurrentMap<String, List<String>> agentKeys;
 
     public List<String> pollKeys(String agentName) {
-        return agentKeys.getOrDefault(agentName, List.of());
+        List<String> keys = agentKeys.get(agentName);
+        if (keys == null) {
+            return Collections.emptyList();
+        }
+
+        List<String> copy = new ArrayList<>(keys);
+        keys.clear();
+        return copy;
     }
 
     public void addKeyForAgent(String agentName, String key) {

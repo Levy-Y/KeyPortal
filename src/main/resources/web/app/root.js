@@ -38,7 +38,6 @@ document.getElementById('sshKeyForm').addEventListener('submit', async e => {
     try {
         const keyData = await requestKey(server);
 
-        // Validate response contains private key
         if (!keyData || !keyData.privateKey) {
             throw new Error('Invalid response: missing private key');
         }
@@ -49,7 +48,7 @@ document.getElementById('sshKeyForm').addEventListener('submit', async e => {
 
         const privateKeyBlob = new Blob([keyData.privateKey], {type: 'text/plain'});
         document.getElementById('downloadPrivateKey').href = URL.createObjectURL(privateKeyBlob);
-        document.getElementById('downloadPrivateKey').download = `${userId}_${server}_private_key`;
+        document.getElementById('downloadPrivateKey').download = `${userId}_${server}_private_key.pem`;
 
 
 

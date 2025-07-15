@@ -13,3 +13,5 @@ servers-wrapper:
       poll-key: 1234589CD
     - name: west-2
       poll-key: 1236789ABD
+    - name: west-3
+      poll-key: 12365489ABD
