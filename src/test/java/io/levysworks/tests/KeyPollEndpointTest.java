@@ -32,7 +32,7 @@ public class KeyPollEndpointTest {
     @Test
     void testPollEndpointReturns200WithKeys() {
         var agent = agentsConfig.servers().getFirst();
-        pollManager.addKeyForAgent(agent.name(), "ssh-rsa abc");
+        pollManager.addKeyForAgent(1, agent.name(), "ssh-rsa abc");
 
         given()
                 .header("X-Agent-Name", agent.name())

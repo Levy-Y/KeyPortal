@@ -8,7 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class KeyManager {
+public class KeyGenerator {
     public static SSHKeyPair RegisterKeypair() throws IOException, InterruptedException {
         return generateEd25519KeyPair();
     }

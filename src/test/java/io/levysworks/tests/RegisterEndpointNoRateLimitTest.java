@@ -40,6 +40,7 @@ public class RegisterEndpointNoRateLimitTest {
     @Test
     void testValidAgentReturnsPrivateKey() {
         given()
+                .queryParam("user", 1)
                 .queryParam("server", agentsConfig.servers().getFirst().name())
                 .when()
                 .get("/api/v1/register")

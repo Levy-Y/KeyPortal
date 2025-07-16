@@ -9,9 +9,9 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_PASSWORD=pass
       - POSTGRES_USER=user
-      - POSTGRES_DB=user_keys
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=keyportal
 
 volumes:
   db-data:

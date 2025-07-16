@@ -1,7 +1,21 @@
 quarkus:
+  datasource:
+    db-kind: postgresql
+    username: user
+    password: pass
+    jdbc:
+      url: jdbc:postgresql://localhost:5432/keyportal
   web-bundler:
     dependencies:
       node-modules: "node_modules"
+  http:
+    cors:
+      enabled: true
+      origins: http://localhost:80
+      methods: [ GET, POST, PATCH ]
+      headers: [ X-Agent-Name, X-Poll-Key ]
+      exposed-headers: [ Content-Disposition ]
+      access-control-allow-credentials: true
 
 servers-wrapper:
   servers:

@@ -6,7 +6,6 @@
     <title>SSH Key Manager</title>
 
     {#bundle /}
-
     <script>
         function showSection(sectionId) {
             // Hide all sections
@@ -25,6 +24,23 @@
             // Add active class to clicked tab
             event.target.classList.add('active');
         }
+
+        async function handleRequest(requestId, action) {
+            let request = await fetch("http://localhost:8080/api/v1/secured/requests/" + requestId, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action: action }),
+            });
+
+            if (request.ok) {
+                alert(action + " action on " + requestId + " was successful.");
+            }
+
+            location.reload();
+        }
+
     </script>
 </head>
 <body>
@@ -113,42 +129,28 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr>
-                    <td>
-                        <div class="user-col">
-                            <div class="user-avatar">JD</div>
-                            <div class="user-info">
-                                <div class="user-name">John Doe</div>
-                                <div class="user-email">john.doe@company.com</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>RSA 4096</td>
-                    <td class="server-list">web-01, web-02, db-01</td>
-                    <td>Jul 15, 14:30</td>
-                    <td>
-                        <button class="btn btn-approve">Approve</button>
-                        <button class="btn btn-decline">Decline</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="user-col">
-                            <div class="user-avatar">SA</div>
-                            <div class="user-info">
-                                <div class="user-name">Sarah Anderson</div>
-                                <div class="user-email">sarah.anderson@company.com</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>ED25519</td>
-                    <td class="server-list">monitoring-01</td>
-                    <td>Jul 15, 13:15</td>
-                    <td>
-                        <button class="btn btn-approve">Approve</button>
-                        <button class="btn btn-decline">Decline</button>
-                    </td>
-                </tr>
+                    {#for request in requests}
+                        <tr>
+                            <td>
+                                <div class="user-col">
+                                    <div class="user-avatar">
+                                        {request.initials}
+                                    </div>
+                                    <div class="user-info">
+                                        <div class="user-name">{request.username}</div>
+                                        <div class="user-email">{request.email}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>4534534</td>
+                            <td class="server-list">{request.server}</td>
+                            <td>{request.timestamp}</td>
+                            <td>
+                                <button class="btn btn-approve" type="button" onclick="handleRequest('{request.id}', 'approve')">Approve</button>
+                                <button class="btn btn-decline" type="button" onclick="handleRequest('{request.id}', 'decline')">Decline</button>
+                            </td>
+                        </tr>
+                    {/for}
                 </tbody>
             </table>
         </div>
@@ -275,31 +277,13 @@
                 <input type="text" placeholder="Search audit log...">
             </div>
             <div style="max-height: 500px; overflow-y: auto;">
-                <div class="audit-entry">
-                    <div class="audit-time">Jul 15, 2024 - 14:30 UTC</div>
-                    <div class="audit-action">Key Request Submitted</div>
-                    <div class="audit-details">User: john.doe@company.com requested RSA 4096 key for web-01, web-02</div>
-                </div>
-                <div class="audit-entry">
-                    <div class="audit-time">Jul 15, 2024 - 13:45 UTC</div>
-                    <div class="audit-action">Key Approved</div>
-                    <div class="audit-details">User: jane.smith@company.com key approved by admin@company.com</div>
-                </div>
-                <div class="audit-entry">
-                    <div class="audit-time">Jul 15, 2024 - 11:20 UTC</div>
-                    <div class="audit-action">Key Revoked</div>
-                    <div class="audit-details">User: mike.wilson@company.com key revoked by admin@company.com - Reason: User left company</div>
-                </div>
-                <div class="audit-entry">
-                    <div class="audit-time">Jul 15, 2024 - 09:15 UTC</div>
-                    <div class="audit-action">Server Access Granted</div>
-                    <div class="audit-details">User: sarah.anderson@company.com granted access to monitoring-01</div>
-                </div>
-                <div class="audit-entry">
-                    <div class="audit-time">Jul 14, 2024 - 16:45 UTC</div>
-                    <div class="audit-action">SSH Login</div>
-                    <div class="audit-details">User: mike.wilson@company.com logged into web-01 successfully</div>
-                </div>
+                {#for log in logs}
+                    <div class="audit-entry">
+                        <div class="audit-time">{log.timestamp}</div>
+                        <div class="audit-action">{log.title}</div>
+                        <div class="audit-details">{log.message}</div>
+                    </div>
+                {/for}
             </div>
         </div>
     </div>

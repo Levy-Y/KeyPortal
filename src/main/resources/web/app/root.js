@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-async function requestKey(server) {
+async function requestKey(server, user) {
     try {
-        const response = await axios.get("/api/v1/register?server=" + server, {
+        const response = await axios.get("/api/v1/register?server=" + server + "&user=" + user, {
             responseType: 'arraybuffer'
         });
 
@@ -36,7 +36,7 @@ document.getElementById('sshKeyForm').addEventListener('submit', async e => {
     btn.textContent = 'Generating...';
 
     try {
-        const keyData = await requestKey(server);
+        const keyData = await requestKey(server, userId);
 
         if (!keyData || !keyData.privateKey) {
             throw new Error('Invalid response: missing private key');
