@@ -5,8 +5,7 @@
 CREATE TABLE IF NOT EXISTS "users" (
   "id" SERIAL PRIMARY KEY,
   "username" VARCHAR(255) UNIQUE NOT NULL,
-  "email" VARCHAR(255) UNIQUE NOT NULL,
-  "key_count" INTEGER DEFAULT 0
+  "email" VARCHAR(255) UNIQUE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "ssh_keys" (
@@ -15,6 +14,7 @@ CREATE TABLE IF NOT EXISTS "ssh_keys" (
   "key_type" VARCHAR(50) NOT NULL,
   "server" TEXT NOT NULL,
   "public_key" TEXT NOT NULL,
+  "fingerprint" TEXT NOT NULL,
   "accepted_by" VARCHAR(255) NOT NULL,
   "issued_date" TIMESTAMP DEFAULT now(),
   "valid_until" TIMESTAMP NOT NULL
@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS "requests" (
   "user_id" INTEGER NOT NULL,
   "server" TEXT NOT NULL,
   "public_key" TEXT NOT NULL,
+  "key_type" TEXT NOT NULL,
   "timestamp" TIMESTAMP DEFAULT now()
 );
 

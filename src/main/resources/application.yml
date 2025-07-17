@@ -5,6 +5,8 @@ quarkus:
     password: pass
     jdbc:
       url: jdbc:postgresql://localhost:5432/keyportal
+  mybatis:
+    initial-sql: queries/initial.sql
   web-bundler:
     dependencies:
       node-modules: "node_modules"

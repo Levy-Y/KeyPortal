@@ -142,7 +142,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>4534534</td>
+                            <td>{request.keyType}</td>
                             <td class="server-list">{request.server}</td>
                             <td>{request.timestamp}</td>
                             <td>
@@ -167,50 +167,33 @@
                     <th>User</th>
                     <th>Key Fingerprint</th>
                     <th>Type</th>
+                    <th>Issued</th>
                     <th>Expires</th>
-                    <th>Last Used</th>
                     <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr>
-                    <td>
-                        <div class="user-col">
-                            <div class="user-avatar">JS</div>
-                            <div class="user-info">
-                                <div class="user-name">Jane Smith</div>
-                                <div class="user-email">jane.smith@company.com</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="key-fingerprint">SHA256:7MzU9kL2pHqR...</td>
-                    <td>RSA 4096</td>
-                    <td>Jun 15, 2025</td>
-                    <td>Jul 15, 10:30</td>
-                    <td>
-                        <button class="btn btn-revoke">Revoke</button>
-                        <button class="btn btn-view">View</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="user-col">
-                            <div class="user-avatar">MW</div>
-                            <div class="user-info">
-                                <div class="user-name">Mike Wilson</div>
-                                <div class="user-email">mike.wilson@company.com</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="key-fingerprint">SHA256:3Hj8mN9pQrS...</td>
-                    <td>ED25519</td>
-                    <td>May 20, 2025</td>
-                    <td>Jul 14, 16:45</td>
-                    <td>
-                        <button class="btn btn-revoke">Revoke</button>
-                        <button class="btn btn-view">View</button>
-                    </td>
-                </tr>
+                    {#for key in keys}
+                        <tr>
+                            <td>
+                                <div class="user-col">
+                                    <div class="user-avatar">{key.initials}</div>
+                                    <div class="user-info">
+                                        <div class="user-name">{key.username}</div>
+                                        <div class="user-email">{key.email}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="key-fingerprint">{key.fingerprint}</td>
+                            <td>{key.type}</td>
+                            <td>{key.issued_date}</td>
+                            <td>{key.expires_date}</td>
+                            <td>
+                                <button class="btn btn-revoke">Revoke</button>
+                                <button class="btn btn-view">View</button>
+                            </td>
+                        </tr>
+                    {/for}
                 </tbody>
             </table>
         </div>
