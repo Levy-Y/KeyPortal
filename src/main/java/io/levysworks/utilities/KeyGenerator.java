@@ -1,5 +1,7 @@
 package io.levysworks.utilities;
 
+import jakarta.enterprise.context.ApplicationScoped;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -7,10 +9,31 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class KeyGenerator {
     public static SSHKeyPair RegisterKeypair() throws IOException, InterruptedException {
         return generateEd25519KeyPair();
+    }
+
+    @ApplicationScoped
+    public static class KeyHasher {
+        public String generateFingerprint(String key) throws NoSuchAlgorithmException {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+
+            md.update(key.getBytes());
+
+            byte[] digest = md.digest();
+
+            StringBuilder hexString = new StringBuilder();
+
+            for (byte b : digest) {
+                hexString.append(Integer.toHexString(0xFF & b));
+            }
+
+            return hexString.toString();
+        }
     }
 
     public static class SSHKeyPair {

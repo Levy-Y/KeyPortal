@@ -10,6 +10,13 @@ quarkus:
   web-bundler:
     dependencies:
       node-modules: "node_modules"
+    bundle:
+      components:
+        components: true
+        qute-tags: true
+
+
+
   http:
     cors:
       enabled: true

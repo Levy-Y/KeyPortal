@@ -30,7 +30,7 @@ public class PollManager {
         return copy;
     }
 
-    public void addKeyForAgent(int user_id, String agentName, String key) {
+    public void addKeyForAgent(String user_uuid, String agentName, String key) {
         agentKeys.computeIfAbsent(agentName, k -> new CopyOnWriteArrayList<>()).add(key);
     }
 

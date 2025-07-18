@@ -29,7 +29,7 @@ public class RegisterEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public Response registerKey(@QueryParam("user") int userId, @QueryParam("server") String agent) throws IOException, InterruptedException, RateLimitException, SQLException {
+    public Response registerKey(@QueryParam("user") String user_uuid, @QueryParam("server") String agent) throws IOException, InterruptedException, RateLimitException, SQLException {
         KeyGenerator.SSHKeyPair sshKeyPair = KeyGenerator.RegisterKeypair();
 
         String publicKey = sshKeyPair.getPublicKey();
@@ -44,9 +44,9 @@ public class RegisterEndpoint {
         }
 
         try {
-            dbManager.addPendingRequest(userId, agent, publicKey);
+            dbManager.addPendingRequest(user_uuid, agent, publicKey);
         } catch (PSQLException e) {
-            return Response.status(Response.Status.UNAUTHORIZED).entity("User doesn't exist with id " + userId).build();
+            return Response.status(Response.Status.UNAUTHORIZED).entity("User doesn't exist with uuid " + user_uuid).build();
         }
 
         return Response.ok(privateKey)

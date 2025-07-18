@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SSH Admin - User Profile</title>
+
+        <script>
+            async function saveUserProfile() {
+                let first_name = document.getElementById("first-name-input").value
+                let last_name = document.getElementById("last-name-input").value
+                let email = document.getElementById("email-input").value
+                let department = document.getElementById("department-input").value
+                let notes = document.getElementById("notes-input").value
+
+                let request = await fetch("http://localhost:8080/api/v1/secured/users/" + "{user.uuid}", {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        first_name: first_name,
+                        last_name: last_name,
+                        email: email,
+                        department: department,
+                        notes: notes
+                    }),
+                });
+
+                if (request.ok) {
+                    alert("Updated user with UUID: {user.uuid}");
+                }
+
+                location.reload();
+            }
+        </script>
+
+        {#bundle /}
+    </head>
+<body>
+    <div class="profile-container">
+        <div class="container">
+            <div class="header">
+                <div class="header-content">
+                    <button class="btn-back" onclick="location.href = '/management/admin'">← Back</button>
+                    <h1>SSH Self-Service Admin</h1>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="profile-header">
+                    <div class="profile-avatar">{user.initials}</div>
+                    <div class="profile-info">
+                        <h2>{user.username}</h2>
+                        <div class="profile-email">{user.email}</div>
+                        <div class="profile-uuid">{user.uuid}</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="first-name-input">First Name</label>
+                        <input id="first-name-input" type="text" value="{user.first_name}">
+                    </div>
+                    <div class="form-group">
+                        <label for="last-name-input">Last Name</label>
+                        <input id="last-name-input" type="text" value="{user.last_name}">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email-input">Email</label>
+                        <input id="email-input" type="email" value="{user.email}">
+                    </div>
+                    <div class="form-group">
+                        <label for="department-input">Department</label>
+                        <input id="department-input" type="text" value="{user.department}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes-input">Notes</label>
+                    <textarea id="notes-input" placeholder="Admin notes about this user...">{user.notes}</textarea>
+                </div>
+
+                <div class="section-title">SSH Keys</div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Created</th>
+                        <th>Key Type</th>
+                        <th>Fingerprint</th>
+                        <th>Server</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        {#for key in keys}
+                            <tr>
+                                <td>{key.created}</td>
+                                <td>{key.key_type}</td>
+                                <td><span class="key-fingerprint">SHA256:{key.fingerprint}</span></td>
+                                <td>{key.server}</td>
+                                <td><button class="btn btn-danger">Revoke</button></td>
+                            </tr>
+                        {/for}
+                    </tbody>
+                </table>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="saveUserProfile()">Save Changes</button>
+                    <button class="btn btn-secondary" disabled>Reset Password</button>
+                    <button class="btn btn-danger" disabled>Disable Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

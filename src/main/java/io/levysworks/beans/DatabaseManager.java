@@ -2,17 +2,19 @@ package io.levysworks.beans;
 
 import javax.sql.DataSource;
 
-import io.levysworks.models.LogEntry;
-import io.levysworks.models.Request;
-import io.levysworks.models.RequestFullTemplate;
+import io.levysworks.models.*;
+import io.levysworks.utilities.KeyGenerator;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 @ApplicationScoped
@@ -20,13 +22,15 @@ public class DatabaseManager {
     @Inject
     DataSource dataSource;
 
+    @Inject
+    KeyGenerator.KeyHasher keyHasher;
+
     private final Logger logger = Logger.getLogger(DatabaseManager.class.getName());
     private Connection conn;
 
     @PostConstruct
     void init() throws SQLException {
         conn = dataSource.getConnection();
-        ensureDatabase();
     }
 
     public int getUserCount() throws SQLException {
@@ -69,12 +73,12 @@ public class DatabaseManager {
 
             while (rs.next()) {
                 int id = rs.getInt("id");
-                int userId = rs.getInt("user_id");
+                String user_uuid = rs.getString("user_uuid");
                 String server = rs.getString("server");
                 String key = rs.getString("public_key");
                 Timestamp timestamp = rs.getTimestamp("timestamp");
 
-                requests.add(new Request(id, userId, server, key, timestamp.toInstant()));
+                requests.add(new Request(id, user_uuid, server, key, timestamp.toInstant()));
             }
 
             return requests;
@@ -88,12 +92,12 @@ public class DatabaseManager {
 
             if (rs.next()) {
                 int id = rs.getInt("id");
-                int userId = rs.getInt("user_id");
+                String user_uuid = rs.getString("user_uuid");
                 String server = rs.getString("server");
                 String key = rs.getString("public_key");
                 Timestamp timestamp = rs.getTimestamp("timestamp");
 
-                return new Request(id, userId, server, key, timestamp.toInstant());
+                return new Request(id, user_uuid, server, key, timestamp.toInstant());
             } else {
                 return null;
             }
@@ -104,37 +108,37 @@ public class DatabaseManager {
         try (Statement stmt = conn.createStatement()) {
             ResultSet rs = stmt.executeQuery("""
                         SELECT
-                            u.username,
+                            u.first_name,
+                            u.last_name,
                             u.email,
                             r.id,
-                            r.user_id,
+                            r.user_uuid,
                             r.server,
+                            r.key_type,
                             r.timestamp
                         FROM requests r
-                        JOIN users u ON r.user_id = u.id;
+                        JOIN users u ON r.user_uuid = u.uuid;
                     """);
             {
                 List<RequestFullTemplate> requests = new ArrayList<>();
 
                 while (rs.next()) {
 
-                    String username = rs.getString("username");
+                    String first_name = rs.getString("first_name");
+                    String last_name = rs.getString("last_name");
+
                     String email = rs.getString("email");
                     int id = rs.getInt("id");
-                    int userId = rs.getInt("user_id");
+                    String user_uuid = rs.getString("user_uuid");
                     String server = rs.getString("server");
+                    String keyType = rs.getString("key_type");
                     Timestamp timestamp = rs.getTimestamp("timestamp");
 
-                    String[] parts = username.trim().split("\\s+");
-                    StringBuilder initials = new StringBuilder();
-                    for (String part : parts) {
-                        if (!part.isEmpty()) {
-                            initials.append(Character.toUpperCase(part.charAt(0)));
-                        }
-                    }
-                    String initialsString = initials.toString();
+                    String username  = first_name + " " + last_name;
 
-                    requests.add(new RequestFullTemplate(initialsString, username, email, id, userId, server, timestamp));
+                    String initialsString = getInitials(username);
+
+                    requests.add(new RequestFullTemplate(initialsString, username, email, id, user_uuid, server, keyType, timestamp));
                 }
 
                 return requests;
@@ -142,44 +146,224 @@ public class DatabaseManager {
         }
     }
 
-    public void addPendingRequest(int user_id, String server, String public_key) throws SQLException {
+    public void addPendingRequest(String user_uuid, String server, String public_key) throws SQLException {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 
         try (PreparedStatement stmt = conn.prepareStatement("""
-                INSERT INTO requests (user_id, server, public_key, timestamp)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO requests (user_uuid, server, public_key, key_type, timestamp)
+                VALUES (?, ?, ?, ?, ?)
                 """)) {
-            stmt.setInt(1, user_id);
+
+            String[] keyParts = public_key.trim().split(" ", 3);
+            String key_type = keyParts[0].replace("ssh-", "");
+
+            stmt.setString(1, user_uuid);
             stmt.setString(2, server);
             stmt.setString(3, public_key);
-            stmt.setTimestamp(4, timestamp);
+            stmt.setString(4, key_type);
+            stmt.setTimestamp(5, timestamp);
             stmt.executeUpdate();
         }
     }
 
-    public void addActiveKey(int user_id, String server, String public_key) throws SQLException {
+    public void addActiveKey(String user_uuid, String server, String public_key) throws SQLException, NoSuchAlgorithmException {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         LocalDateTime tempDateTime = timestamp.toLocalDateTime().plusMonths(3);
         Timestamp validUntil = Timestamp.valueOf(tempDateTime);
 
+        String[] keyParts = public_key.trim().split(" ", 3);
+        String key_type = keyParts[0].replace("ssh-", "");
+
+        String fingerprintHash = keyHasher.generateFingerprint(keyParts[1]);
+
 //        TODO: Change from constant key type, and admin!
-        String key_type = "ed25519";
         String accepted_by = "admin1";
 
         try (PreparedStatement stmt = conn.prepareStatement("""
-                INSERT INTO ssh_keys (user_id, key_type, server, public_key, accepted_by, issued_date, valid_until) VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO ssh_keys (user_uuid, key_type, server, public_key, fingerprint, accepted_by, issued_date, valid_until) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """)) {
 
-            stmt.setInt(1, user_id);
+            stmt.setString(1, user_uuid);
             stmt.setString(2, key_type);
             stmt.setString(3, server);
             stmt.setString(4, public_key);
-            stmt.setString(5, accepted_by);
-            stmt.setTimestamp(6, timestamp);
-            stmt.setTimestamp(7, validUntil);
+            stmt.setString(5, fingerprintHash);
+            stmt.setString(6, accepted_by);
+            stmt.setTimestamp(7, timestamp);
+            stmt.setTimestamp(8, validUntil);
 
             stmt.executeUpdate();
         }
+    }
+
+    public List<KeysFullTemplate> getKeysForTemplate() throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery("""
+                        SELECT
+                            u.last_name,
+                            u.first_name,
+                            u.email,
+                            r.id,
+                            r.fingerprint,
+                            r.key_type,
+                            r.issued_date,
+                            r.valid_until
+                        FROM ssh_keys r
+                        JOIN users u ON r.user_uuid = u.uuid;
+                    """);
+            {
+                List<KeysFullTemplate> requests = new ArrayList<>();
+
+                while (rs.next()) {
+
+                    String first_name = rs.getString("first_name");
+                    String last_name = rs.getString("last_name");
+
+                    String email = rs.getString("email");
+                    String fingerprint = rs.getString("fingerprint");
+                    String key_type = rs.getString("key_type");
+                    Timestamp issued_date = rs.getTimestamp("issued_date");
+                    Timestamp valid_until = rs.getTimestamp("valid_until");
+
+                    String username = first_name + " " + last_name;
+
+                    String truncated = fingerprint.length() > 15 ? fingerprint.substring(0, 15) + "..." : fingerprint;
+                    String initialsString = getInitials(username);
+
+                    requests.add(new KeysFullTemplate(initialsString, username, email, truncated, key_type, issued_date, valid_until));
+                }
+
+                return requests;
+            }
+        }
+    }
+
+    public List<UsersFullTemplate> getUsersForTemplate() throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery("""
+                    SELECT
+                        u.last_name,
+                        u.first_name,
+                        u.uuid,
+                        u.email,
+                        u.department,
+                        COUNT(k.id) AS key_count,
+                        ARRAY_AGG(DISTINCT k.server ORDER BY k.server) AS servers
+                    FROM
+                        users u
+                    LEFT JOIN
+                        ssh_keys k ON k.user_uuid = u.uuid
+                    GROUP BY
+                        u.uuid, u.last_name, u.first_name, u.email, u.department;
+                    """);
+            {
+                List<UsersFullTemplate> requests = new ArrayList<>();
+
+                while (rs.next()) {
+                    String first_name = rs.getString("first_name");
+                    String last_name = rs.getString("last_name");
+
+                    String uuid = rs.getString("uuid");
+
+                    String department = rs.getString("department");
+                    String email = rs.getString("email");
+                    Integer key_count = rs.getInt("key_count");
+                    Array array = rs.getArray("servers");
+                    String[] servers = (String[]) array.getArray();
+
+                    String username = first_name + " " + last_name;
+                    String initialsString = getInitials(username);
+
+                    servers = Arrays.stream(servers)
+                            .filter(s -> s != null && !s.equalsIgnoreCase("null"))
+                            .toArray(String[]::new);
+
+                    String serverString = servers.length == 0 ? "None" : String.join(", ", servers);
+
+                    requests.add(new UsersFullTemplate(initialsString, uuid, username, first_name, last_name, department, email, key_count, serverString));
+                }
+
+                return requests;
+            }
+        }
+    }
+
+    public UserProfile getUserByUUID(String uuid) throws SQLException {
+        String sql = """
+            SELECT * FROM users WHERE uuid = ?;
+        """;
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, uuid);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    String first_name = rs.getString("first_name");
+                    String last_name = rs.getString("last_name");
+                    String email = rs.getString("email");
+                    String department = rs.getString("department");
+
+                    String notes = rs.getString("notes");
+
+                    String username = first_name + " " + last_name;
+                    String initialsString = getInitials(username);
+
+                    return new UserProfile(initialsString, username, uuid, first_name, last_name, email, department, notes);
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
+
+    public List<UserKey> getUserKeysByUUID(String uuid) throws SQLException {
+        try (PreparedStatement stmt = conn.prepareStatement("""
+                SELECT * FROM ssh_keys WHERE user_uuid = ?;
+                """)) {
+            stmt.setString(1, uuid);
+            ResultSet rs = stmt.executeQuery();
+
+            List<UserKey> keys = new ArrayList<>();
+
+            while (rs.next()) {
+                String server = rs.getString("server");
+                String fingerprint = rs.getString("fingerprint");
+                String key_type = rs.getString("key_type");
+                Timestamp issued_date = rs.getTimestamp("issued_date");
+
+                String truncated = fingerprint.length() > 15 ? fingerprint.substring(0, 15) + "..." : fingerprint;
+
+                keys.add(new UserKey(issued_date, key_type, truncated, server));
+            }
+
+            return keys;
+        }
+    }
+
+    public void updateUser(String uuid, String first_name, String last_name, String email, String department, String notes) throws SQLException {
+        try (PreparedStatement stmt = conn.prepareStatement("""
+                UPDATE users
+                SET first_name = ?, last_name = ?, email = ?, department = ?, notes = ?
+                WHERE uuid = ?
+            """)) {
+            stmt.setString(1, first_name);
+            stmt.setString(2, last_name);
+            stmt.setString(3, email);
+            stmt.setString(4, department);
+            stmt.setString(5, notes);
+            stmt.setString(6, uuid);
+            stmt.executeUpdate();
+        }
+    }
+
+    private String getInitials(String username) {
+        String[] parts = username.trim().split("\\s+");
+        StringBuilder initials = new StringBuilder();
+        for (String part : parts) {
+            if (!part.isEmpty()) {
+                initials.append(Character.toUpperCase(part.charAt(0)));
+            }
+        }
+        return initials.toString();
     }
 
     public void addNewLog(String title, String message, Timestamp timestamp) throws SQLException {
@@ -217,70 +401,6 @@ public class DatabaseManager {
                 """)) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
-        }
-    }
-
-    public void ensureDatabase() throws SQLException {
-        String[] statements = {
-                """
-        CREATE TABLE IF NOT EXISTS "users" (
-          "id" SERIAL PRIMARY KEY,
-          "username" VARCHAR(255) UNIQUE NOT NULL,
-          "email" VARCHAR(255) UNIQUE NOT NULL,
-          "key_count" INTEGER DEFAULT 0
-        )
-        """,
-                """
-        CREATE TABLE IF NOT EXISTS "ssh_keys" (
-          "id" SERIAL PRIMARY KEY,
-          "user_id" INTEGER NOT NULL,
-          "key_type" VARCHAR(50) NOT NULL,
-          "server" TEXT NOT NULL,
-          "public_key" TEXT NOT NULL,
-          "accepted_by" VARCHAR(255) NOT NULL,
-          "issued_date" TIMESTAMP DEFAULT now(),
-          "valid_until" TIMESTAMP NOT NULL
-        )
-        """,
-                """
-        CREATE TABLE IF NOT EXISTS "audit_log" (
-          "id" SERIAL PRIMARY KEY,
-          "title" VARCHAR(255) NOT NULL,
-          "message" TEXT NOT NULL,
-          "timestamp" TIMESTAMP DEFAULT now()
-        )
-        """,
-                """
-        CREATE TABLE IF NOT EXISTS "requests" (
-          "id" SERIAL PRIMARY KEY,
-          "user_id" INTEGER NOT NULL,
-          "server" TEXT NOT NULL,
-          "public_key" TEXT NOT NULL,
-          "timestamp" TIMESTAMP DEFAULT now()
-        )
-        """,
-                """
-        ALTER TABLE "ssh_keys"
-        ADD CONSTRAINT fk_user FOREIGN KEY ("user_id") REFERENCES "users"("id")
-        """,
-                """
-        ALTER TABLE "requests"
-        ADD CONSTRAINT fk_user_request FOREIGN KEY ("user_id") REFERENCES "users"("id");
-        """
-        };
-
-        try (Statement stmt = conn.createStatement()) {
-            for (String sql : statements) {
-                try {
-                    stmt.executeUpdate(sql);
-                } catch (SQLException e) {
-                    if (!e.getSQLState().equals("42710")) {
-                        System.out.println("SQL state: " + e.getSQLState() + " - object already exists.");
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            logger.severe("Database setup failed: " + e.getMessage());
         }
     }
 }

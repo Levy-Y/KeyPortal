@@ -8,20 +8,16 @@
     {#bundle /}
     <script>
         function showSection(sectionId) {
-            // Hide all sections
             document.querySelectorAll('.section').forEach(section => {
                 section.classList.remove('active');
             });
 
-            // Remove active class from all tabs
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
             });
 
-            // Show selected section
             document.getElementById(sectionId).classList.add('active');
 
-            // Add active class to clicked tab
             event.target.classList.add('active');
         }
 
@@ -41,232 +37,241 @@
             location.reload();
         }
 
+        function gotoUserProfile(username) {
+            location.href = '/management/admin?query_user=' + username;
+        }
+
     </script>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1>SSH Key Manager</h1>
-    </div>
-
-    <div class="tabs">
-        <div class="tab active" onclick="showSection('overview')">Overview</div>
-        <div class="tab" onclick="showSection('pending')">Pending</div>
-        <div class="tab" onclick="showSection('active')">Active Keys</div>
-        <div class="tab" onclick="showSection('users')">Users</div>
-        <div class="tab" onclick="showSection('audit')">Audit</div>
-    </div>
-
-    <div class="content">
-        <!-- Overview Section -->
-        <div id="overview" class="section active">
-            <div class="stats">
-                <div class="stat-card">
-                    <div class="stat-number">{activeKeyCount}</div>
-                    <div class="stat-label">Active Keys</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">{pendingRequestCount}</div>
-                    <div class="stat-label">Pending</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">{userCount}</div>
-                    <div class="stat-label">Users</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">{serverCount}</div>
-                    <div class="stat-label">Servers</div>
-                </div>
-            </div>
-
-            <h3>Recent Activity</h3>
-            <table>
-                <thead>
-                <tr>
-                    <th>Time</th>
-                    <th>User</th>
-                    <th>Action</th>
-                    <th>Status</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <td>14:30</td>
-                    <td>john.doe@company.com</td>
-                    <td>Key request</td>
-                    <td><span class="badge badge-pending">Pending</span></td>
-                </tr>
-                <tr>
-                    <td>13:45</td>
-                    <td>jane.smith@company.com</td>
-                    <td>Key approved</td>
-                    <td><span class="badge badge-active">Active</span></td>
-                </tr>
-                <tr>
-                    <td>11:20</td>
-                    <td>mike.wilson@company.com</td>
-                    <td>Key revoked</td>
-                    <td><span class="badge badge-revoked">Revoked</span></td>
-                </tr>
-                </tbody>
-            </table>
+<div class="admin-container">
+    <div class="container">
+        <div class="header">
+            <h1>SSH Key Manager</h1>
         </div>
 
-        <!-- Pending Section -->
-        <div id="pending" class="section">
-            <h3>Pending Key Requests</h3>
-            <div class="search-box">
-                <input type="text" placeholder="Search requests...">
-            </div>
-            <table>
-                <thead>
-                <tr>
-                    <th>User</th>
-                    <th>Key Type</th>
-                    <th>Servers</th>
-                    <th>Requested</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                    {#for request in requests}
-                        <tr>
-                            <td>
-                                <div class="user-col">
-                                    <div class="user-avatar">
-                                        {request.initials}
-                                    </div>
-                                    <div class="user-info">
-                                        <div class="user-name">{request.username}</div>
-                                        <div class="user-email">{request.email}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>{request.keyType}</td>
-                            <td class="server-list">{request.server}</td>
-                            <td>{request.timestamp}</td>
-                            <td>
-                                <button class="btn btn-approve" type="button" onclick="handleRequest('{request.id}', 'approve')">Approve</button>
-                                <button class="btn btn-decline" type="button" onclick="handleRequest('{request.id}', 'decline')">Decline</button>
-                            </td>
-                        </tr>
-                    {/for}
-                </tbody>
-            </table>
+        <div class="tabs">
+            <div class="tab active" onclick="showSection('overview')">Overview</div>
+            <div class="tab" onclick="showSection('pending')">Pending</div>
+            <div class="tab" onclick="showSection('active')">Active Keys</div>
+            <div class="tab" onclick="showSection('users')">Users</div>
+            <div class="tab" onclick="showSection('audit')">Audit</div>
         </div>
 
-        <!-- Active Keys Section -->
-        <div id="active" class="section">
-            <h3>Active SSH Keys</h3>
-            <div class="search-box">
-                <input type="text" placeholder="Search keys...">
-            </div>
-            <table>
-                <thead>
-                <tr>
-                    <th>User</th>
-                    <th>Key Fingerprint</th>
-                    <th>Type</th>
-                    <th>Issued</th>
-                    <th>Expires</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                    {#for key in keys}
-                        <tr>
-                            <td>
-                                <div class="user-col">
-                                    <div class="user-avatar">{key.initials}</div>
-                                    <div class="user-info">
-                                        <div class="user-name">{key.username}</div>
-                                        <div class="user-email">{key.email}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="key-fingerprint">{key.fingerprint}</td>
-                            <td>{key.type}</td>
-                            <td>{key.issued_date}</td>
-                            <td>{key.expires_date}</td>
-                            <td>
-                                <button class="btn btn-revoke">Revoke</button>
-                                <button class="btn btn-view">View</button>
-                            </td>
-                        </tr>
-                    {/for}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Users Section -->
-        <div id="users" class="section">
-            <h3>User Access</h3>
-            <div class="search-box">
-                <input type="text" placeholder="Search users...">
-            </div>
-            <table>
-                <thead>
-                <tr>
-                    <th>User</th>
-                    <th>Keys</th>
-                    <th>Server Access</th>
-                    <th>Last Login</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <td>
-                        <div class="user-col">
-                            <div class="user-avatar">JS</div>
-                            <div class="user-info">
-                                <div class="user-name">Jane Smith</div>
-                                <div class="user-email">jane.smith@company.com</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>2</td>
-                    <td class="server-list">web-01, web-02, db-01, api-01</td>
-                    <td>Jul 15, 10:30</td>
-                    <td>
-                        <button class="btn btn-view">View</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="user-col">
-                            <div class="user-avatar">MW</div>
-                            <div class="user-info">
-                                <div class="user-name">Mike Wilson</div>
-                                <div class="user-email">mike.wilson@company.com</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>1</td>
-                    <td class="server-list">web-01, web-02, monitoring-01</td>
-                    <td>Jul 14, 16:45</td>
-                    <td>
-                        <button class="btn btn-view">View</button>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Audit Section -->
-        <div id="audit" class="section">
-            <h3>Audit Log</h3>
-            <div class="search-box">
-                <input type="text" placeholder="Search audit log...">
-            </div>
-            <div style="max-height: 500px; overflow-y: auto;">
-                {#for log in logs}
-                    <div class="audit-entry">
-                        <div class="audit-time">{log.timestamp}</div>
-                        <div class="audit-action">{log.title}</div>
-                        <div class="audit-details">{log.message}</div>
+        <div class="content">
+            <!-- Overview Section -->
+            <div id="overview" class="section active">
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number">{activeKeyCount}</div>
+                        <div class="stat-label">Active Keys</div>
                     </div>
-                {/for}
+                    <div class="stat-card">
+                        <div class="stat-number">{pendingRequestCount}</div>
+                        <div class="stat-label">Pending</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{userCount}</div>
+                        <div class="stat-label">Users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{serverCount}</div>
+                        <div class="stat-label">Servers</div>
+                    </div>
+                </div>
+
+                <h3>Recent Activity</h3>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>14:30</td>
+                        <td>john.doe@company.com</td>
+                        <td>Key request</td>
+                        <td><span class="badge badge-pending">Pending</span></td>
+                    </tr>
+                    <tr>
+                        <td>13:45</td>
+                        <td>jane.smith@company.com</td>
+                        <td>Key approved</td>
+                        <td><span class="badge badge-active">Active</span></td>
+                    </tr>
+                    <tr>
+                        <td>11:20</td>
+                        <td>mike.wilson@company.com</td>
+                        <td>Key revoked</td>
+                        <td><span class="badge badge-revoked">Revoked</span></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pending Section -->
+            <div id="pending" class="section">
+                <h3>Pending Key Requests</h3>
+                <div class="search-box">
+                    <input type="text" placeholder="Search requests...">
+                </div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Key Type</th>
+                        <th>Servers</th>
+                        <th>Requested</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        {#if requests.size() > 0}
+                            {#for request in requests}
+                                <tr>
+                                    <td>
+                                        <div class="user-col">
+                                            <div class="user-avatar">
+                                                {request.initials}
+                                            </div>
+                                            <div class="user-info">
+                                                <div class="user-name">{request.username}</div>
+                                                <div class="user-email">{request.email}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{request.keyType}</td>
+                                    <td class="server-list">{request.server}</td>
+                                    <td>{request.timestamp}</td>
+                                    <td>
+                                        <button class="btn btn-approve" type="button" onclick="handleRequest('{request.id}', 'approve')">Approve</button>
+                                        <button class="btn btn-decline" type="button" onclick="handleRequest('{request.id}', 'decline')">Decline</button>
+                                    </td>
+                                </tr>
+                            {/for}
+                        {#else}
+                            <tr>
+                                <td colspan="5" class="empty-state text-center text-gray-500 italic">No pending key requests</td>
+                            </tr>
+                        {/if}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Active Keys Section -->
+            <div id="active" class="section">
+                <h3>Active SSH Keys</h3>
+                <div class="search-box">
+                    <input type="text" placeholder="Search keys...">
+                </div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Key Fingerprint</th>
+                        <th>Type</th>
+                        <th>Issued</th>
+                        <th>Expires</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        {#if keys.size() > 0}
+                            {#for key in keys}
+                                <tr>
+                                    <td>
+                                        <div class="user-col">
+                                            <div class="user-avatar">{key.initials}</div>
+                                            <div class="user-info">
+                                                <div class="user-name">{key.username}</div>
+                                                <div class="user-email">{key.email}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="key-fingerprint">SHA256:{key.fingerprint}</td>
+                                    <td>{key.type}</td>
+                                    <td>{key.issued_date}</td>
+                                    <td>{key.expires_date}</td>
+                                    <td>
+                                        <button class="btn btn-revoke">Revoke</button>
+                                        <button class="btn btn-view">View</button>
+                                    </td>
+                                </tr>
+                            {/for}
+                        {#else}
+                            <tr>
+                                <td colspan="6" class="empty-state text-center text-gray-500 italic">No keys yet</td>
+                            </tr>
+                        {/if}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Users Section -->
+            <div id="users" class="section">
+                <h3>User Access</h3>
+                <div class="search-box">
+                    <input type="text" placeholder="Search users...">
+                </div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Keys</th>
+                        <th>Server Access</th>
+                        <th>Department</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        {#if users.size() > 0}
+                            {#for user in users}
+                                <tr>
+                                    <td>
+                                        <div class="user-col">
+                                            <div class="user-avatar">{user.initials}</div>
+                                            <div class="user-info">
+                                                <div class="user-name">{user.username}</div>
+                                                <div class="user-email">{user.email}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{user.key_count}</td>
+                                    <td class="server-list">{user.servers}</td>
+                                    <td>{user.department}</td>
+                                    <td>
+                                        <button class="btn btn-view" onclick="gotoUserProfile('{user.uuid}')">View</button>
+                                    </td>
+                                </tr>
+                            {/for}
+                        {#else}
+                            <tr>
+                                <td colspan="5" class="empty-state text-center text-gray-500 italic">No users to show</td>
+                            </tr>
+                        {/if}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Audit Section -->
+            <div id="audit" class="section">
+                <h3>Audit Log</h3>
+                <div class="search-box">
+                    <input type="text" placeholder="Search audit log...">
+                </div>
+                <div style="max-height: 500px; overflow-y: auto;">
+                    {#for log in logs}
+                        <div class="audit-entry">
+                            <div class="audit-time">{log.timestamp}</div>
+                            <div class="audit-action">{log.title}</div>
+                            <div class="audit-details">{log.message}</div>
+                        </div>
+                    {/for}
+                </div>
             </div>
         </div>
     </div>
