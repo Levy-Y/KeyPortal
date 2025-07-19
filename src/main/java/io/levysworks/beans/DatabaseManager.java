@@ -3,6 +3,7 @@ package io.levysworks.beans;
 import javax.sql.DataSource;
 
 import io.levysworks.models.*;
+import io.levysworks.models.requests.Request;
 import io.levysworks.utilities.KeyGenerator;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -11,10 +12,7 @@ import jakarta.inject.Inject;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Logger;
 
 @ApplicationScoped
@@ -104,7 +102,7 @@ public class DatabaseManager {
         }
     }
 
-    public List<RequestFullTemplate> getRequestsForTemplate() throws SQLException {
+    public List<CompositeUserData> getRequestsForTemplate() throws SQLException {
         try (Statement stmt = conn.createStatement()) {
             ResultSet rs = stmt.executeQuery("""
                         SELECT
@@ -120,7 +118,7 @@ public class DatabaseManager {
                         JOIN users u ON r.user_uuid = u.uuid;
                     """);
             {
-                List<RequestFullTemplate> requests = new ArrayList<>();
+                List<CompositeUserData> requests = new ArrayList<>();
 
                 while (rs.next()) {
 
@@ -138,7 +136,16 @@ public class DatabaseManager {
 
                     String initialsString = getInitials(username);
 
-                    requests.add(new RequestFullTemplate(initialsString, username, email, id, user_uuid, server, keyType, timestamp));
+                    requests.add(new CompositeUserDataBuilder()
+                            .initials(initialsString)
+                            .username(username)
+                            .email(email)
+                            .request_id(id)
+                            .uuid(user_uuid)
+                            .server(server)
+                            .key_type(keyType)
+                            .issued_date(timestamp)
+                            .build());
                 }
 
                 return requests;
@@ -176,34 +183,38 @@ public class DatabaseManager {
 
         String fingerprintHash = keyHasher.generateFingerprint(keyParts[1]);
 
+        String uid = keyParts[2];
+
 //        TODO: Change from constant key type, and admin!
         String accepted_by = "admin1";
 
         try (PreparedStatement stmt = conn.prepareStatement("""
-                INSERT INTO ssh_keys (user_uuid, key_type, server, public_key, fingerprint, accepted_by, issued_date, valid_until) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO ssh_keys (uid, user_uuid, key_type, server, public_key, fingerprint, accepted_by, issued_date, valid_until) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """)) {
 
-            stmt.setString(1, user_uuid);
-            stmt.setString(2, key_type);
-            stmt.setString(3, server);
-            stmt.setString(4, public_key);
-            stmt.setString(5, fingerprintHash);
-            stmt.setString(6, accepted_by);
-            stmt.setTimestamp(7, timestamp);
-            stmt.setTimestamp(8, validUntil);
+            stmt.setString(1, uid);
+            stmt.setString(2, user_uuid);
+            stmt.setString(3, key_type);
+            stmt.setString(4, server);
+            stmt.setString(5, public_key);
+            stmt.setString(6, fingerprintHash);
+            stmt.setString(7, accepted_by);
+            stmt.setTimestamp(8, timestamp);
+            stmt.setTimestamp(9, validUntil);
 
             stmt.executeUpdate();
         }
     }
 
-    public List<KeysFullTemplate> getKeysForTemplate() throws SQLException {
+    public List<CompositeUserData> getKeysForTemplate() throws SQLException {
         try (Statement stmt = conn.createStatement()) {
             ResultSet rs = stmt.executeQuery("""
                         SELECT
                             u.last_name,
                             u.first_name,
                             u.email,
-                            r.id,
+                            r.uid,
+                            r.server,
                             r.fingerprint,
                             r.key_type,
                             r.issued_date,
@@ -212,7 +223,7 @@ public class DatabaseManager {
                         JOIN users u ON r.user_uuid = u.uuid;
                     """);
             {
-                List<KeysFullTemplate> requests = new ArrayList<>();
+                List<CompositeUserData> requests = new ArrayList<>();
 
                 while (rs.next()) {
 
@@ -222,15 +233,27 @@ public class DatabaseManager {
                     String email = rs.getString("email");
                     String fingerprint = rs.getString("fingerprint");
                     String key_type = rs.getString("key_type");
-                    Timestamp issued_date = rs.getTimestamp("issued_date");
                     Timestamp valid_until = rs.getTimestamp("valid_until");
+
+                    String uid = rs.getString("uid");
+                    String server = rs.getString("server");
 
                     String username = first_name + " " + last_name;
 
                     String truncated = fingerprint.length() > 15 ? fingerprint.substring(0, 15) + "..." : fingerprint;
                     String initialsString = getInitials(username);
 
-                    requests.add(new KeysFullTemplate(initialsString, username, email, truncated, key_type, issued_date, valid_until));
+                    requests.add(new CompositeUserDataBuilder()
+                            .initials(initialsString)
+                            .username(username)
+                            .email(email)
+                            .fingerprint(truncated)
+                            .key_type(key_type)
+                            .issued_date(valid_until)
+                            .valid_until(valid_until)
+                            .key_uid(uid)
+                            .server(server)
+                            .build());
                 }
 
                 return requests;
@@ -238,7 +261,7 @@ public class DatabaseManager {
         }
     }
 
-    public List<UsersFullTemplate> getUsersForTemplate() throws SQLException {
+    public List<CompositeUserData> getUsersForTemplate() throws SQLException {
         try (Statement stmt = conn.createStatement()) {
             ResultSet rs = stmt.executeQuery("""
                     SELECT
@@ -247,7 +270,7 @@ public class DatabaseManager {
                         u.uuid,
                         u.email,
                         u.department,
-                        COUNT(k.id) AS key_count,
+                        COUNT(k.uid) AS key_count,
                         ARRAY_AGG(DISTINCT k.server ORDER BY k.server) AS servers
                     FROM
                         users u
@@ -257,7 +280,7 @@ public class DatabaseManager {
                         u.uuid, u.last_name, u.first_name, u.email, u.department;
                     """);
             {
-                List<UsersFullTemplate> requests = new ArrayList<>();
+                List<CompositeUserData> requests = new ArrayList<>();
 
                 while (rs.next()) {
                     String first_name = rs.getString("first_name");
@@ -280,7 +303,17 @@ public class DatabaseManager {
 
                     String serverString = servers.length == 0 ? "None" : String.join(", ", servers);
 
-                    requests.add(new UsersFullTemplate(initialsString, uuid, username, first_name, last_name, department, email, key_count, serverString));
+                    requests.add(new CompositeUserDataBuilder()
+                            .initials(initialsString)
+                            .uuid(uuid)
+                            .username(username)
+                            .first_name(first_name)
+                            .last_name(last_name)
+                            .department(department)
+                            .email(email)
+                            .key_count(key_count)
+                            .servers(serverString)
+                            .build());
                 }
 
                 return requests;
@@ -288,7 +321,7 @@ public class DatabaseManager {
         }
     }
 
-    public UserProfile getUserByUUID(String uuid) throws SQLException {
+    public CompositeUserData getUserByUUID(String uuid) throws SQLException {
         String sql = """
             SELECT * FROM users WHERE uuid = ?;
         """;
@@ -307,7 +340,16 @@ public class DatabaseManager {
                     String username = first_name + " " + last_name;
                     String initialsString = getInitials(username);
 
-                    return new UserProfile(initialsString, username, uuid, first_name, last_name, email, department, notes);
+                    return new CompositeUserDataBuilder()
+                            .initials(initialsString)
+                            .username(username)
+                            .uuid(uuid)
+                            .first_name(first_name)
+                            .last_name(last_name)
+                            .email(email)
+                            .department(department)
+                            .notes(notes)
+                            .build();
                 } else {
                     return null;
                 }
@@ -315,27 +357,46 @@ public class DatabaseManager {
         }
     }
 
-    public List<UserKey> getUserKeysByUUID(String uuid) throws SQLException {
+    public List<CompositeUserData> getUserKeysByUUID(String uuid) throws SQLException {
         try (PreparedStatement stmt = conn.prepareStatement("""
                 SELECT * FROM ssh_keys WHERE user_uuid = ?;
                 """)) {
             stmt.setString(1, uuid);
             ResultSet rs = stmt.executeQuery();
 
-            List<UserKey> keys = new ArrayList<>();
+            List<CompositeUserData> keys = new ArrayList<>();
 
             while (rs.next()) {
                 String server = rs.getString("server");
                 String fingerprint = rs.getString("fingerprint");
                 String key_type = rs.getString("key_type");
+                String uid = rs.getString("uid");
                 Timestamp issued_date = rs.getTimestamp("issued_date");
 
                 String truncated = fingerprint.length() > 15 ? fingerprint.substring(0, 15) + "..." : fingerprint;
 
-                keys.add(new UserKey(issued_date, key_type, truncated, server));
+                keys.add(new CompositeUserDataBuilder()
+                        .issued_date(issued_date)
+                        .key_type(key_type)
+                        .fingerprint(truncated)
+                        .server(server)
+                        .key_uid(uid)
+                        .build());
             }
 
             return keys;
+        }
+    }
+
+    public void removeKeyByUID(String server, String uid) throws SQLException {
+        String sql = """
+                DELETE FROM ssh_keys WHERE uid = ? AND server = ?;
+        """;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, uid);
+            stmt.setString(2, server);
+
+            stmt.executeUpdate();
         }
     }
 
@@ -351,7 +412,11 @@ public class DatabaseManager {
             stmt.setString(4, department);
             stmt.setString(5, notes);
             stmt.setString(6, uuid);
-            stmt.executeUpdate();
+
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected == 0) {
+                throw new SQLException("No user records updated");
+            }
         }
     }
 
@@ -378,20 +443,35 @@ public class DatabaseManager {
         }
     }
 
-    public List<LogEntry> getLogs(int limit) throws SQLException {
+    public List<CompositeUserData> getLogs(int limit) throws SQLException {
         try (Statement stmt = conn.createStatement()) {
             ResultSet rs = stmt.executeQuery("SELECT * FROM audit_log LIMIT " + limit + ";");
-            List<LogEntry> entries = new ArrayList<>();
+            List<CompositeUserData> entries = new ArrayList<>();
 
             while (rs.next()) {
                 String title = rs.getString("title");
                 String message = rs.getString("message");
                 Timestamp timestamp = rs.getTimestamp("timestamp");
 
-                entries.add(new LogEntry(title, message, timestamp));
+                entries.add(new CompositeUserDataBuilder()
+                        .log_title(title)
+                        .log_message(message)
+                        .log_timestamp(timestamp)
+                        .build());
             }
 
             return entries;
+        }
+    }
+
+    public boolean checkKeyExists(String uid) throws SQLException {
+        try (PreparedStatement stmt = conn.prepareStatement(
+                "SELECT COUNT(*) FROM ssh_keys WHERE uid = ?"
+        )) {
+            stmt.setString(1, uid);
+            ResultSet rs = stmt.executeQuery();
+
+            return rs.next();
         }
     }
 

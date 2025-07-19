@@ -37,10 +37,6 @@
             location.reload();
         }
 
-        function gotoUserProfile(username) {
-            location.href = '/management/admin?query_user=' + username;
-        }
-
     </script>
 </head>
 <body>
@@ -144,12 +140,12 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td>{request.keyType}</td>
+                                    <td>{request.key_type}</td>
                                     <td class="server-list">{request.server}</td>
-                                    <td>{request.timestamp}</td>
+                                    <td>{request.issued_date}</td>
                                     <td>
-                                        <button class="btn btn-approve" type="button" onclick="handleRequest('{request.id}', 'approve')">Approve</button>
-                                        <button class="btn btn-decline" type="button" onclick="handleRequest('{request.id}', 'decline')">Decline</button>
+                                        <button class="btn btn-approve" type="button" onclick="handleRequest('{request.request_id}', 'approve')">Approve</button>
+                                        <button class="btn btn-decline" type="button" onclick="handleRequest('{request.request_id}', 'decline')">Decline</button>
                                     </td>
                                 </tr>
                             {/for}
@@ -193,11 +189,11 @@
                                         </div>
                                     </td>
                                     <td class="key-fingerprint">SHA256:{key.fingerprint}</td>
-                                    <td>{key.type}</td>
+                                    <td>{key.key_type}</td>
                                     <td>{key.issued_date}</td>
-                                    <td>{key.expires_date}</td>
+                                    <td>{key.valid_until}</td>
                                     <td>
-                                        <button class="btn btn-revoke">Revoke</button>
+                                        <button class="btn btn-revoke revokeKeyButton" data-uid="{key.key_uid}" data-server="{key.server}">Revoke</button>
                                         <button class="btn btn-view">View</button>
                                     </td>
                                 </tr>
@@ -244,7 +240,7 @@
                                     <td class="server-list">{user.servers}</td>
                                     <td>{user.department}</td>
                                     <td>
-                                        <button class="btn btn-view" onclick="gotoUserProfile('{user.uuid}')">View</button>
+                                        <button class="btn btn-view viewUserButton" data-uuid="{user.uuid}">View</button>
                                     </td>
                                 </tr>
                             {/for}
@@ -266,9 +262,9 @@
                 <div style="max-height: 500px; overflow-y: auto;">
                     {#for log in logs}
                         <div class="audit-entry">
-                            <div class="audit-time">{log.timestamp}</div>
-                            <div class="audit-action">{log.title}</div>
-                            <div class="audit-details">{log.message}</div>
+                            <div class="audit-time">{log.log_timestamp}</div>
+                            <div class="audit-action">{log.log_title}</div>
+                            <div class="audit-details">{log.log_message}</div>
                         </div>
                     {/for}
                 </div>

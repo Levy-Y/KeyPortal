@@ -14,17 +14,20 @@ quarkus:
       components:
         components: true
         qute-tags: true
-
-
-
   http:
     cors:
       enabled: true
       origins: http://localhost:80
-      methods: [ GET, POST, PATCH ]
+      methods: [ GET, POST, PATCH, DELETE ]
       headers: [ X-Agent-Name, X-Poll-Key ]
       exposed-headers: [ Content-Disposition ]
       access-control-allow-credentials: true
+  rabbitmqclient:
+    username: user
+    password: pass
+    hostname: localhost
+    port: 5672
+    virtual-host: /
 
 servers-wrapper:
   servers:

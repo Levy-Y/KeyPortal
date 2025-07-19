@@ -5,36 +5,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>SSH Admin - User Profile</title>
 
-        <script>
-            async function saveUserProfile() {
-                let first_name = document.getElementById("first-name-input").value
-                let last_name = document.getElementById("last-name-input").value
-                let email = document.getElementById("email-input").value
-                let department = document.getElementById("department-input").value
-                let notes = document.getElementById("notes-input").value
-
-                let request = await fetch("http://localhost:8080/api/v1/secured/users/" + "{user.uuid}", {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        first_name: first_name,
-                        last_name: last_name,
-                        email: email,
-                        department: department,
-                        notes: notes
-                    }),
-                });
-
-                if (request.ok) {
-                    alert("Updated user with UUID: {user.uuid}");
-                }
-
-                location.reload();
-            }
-        </script>
-
         {#bundle /}
     </head>
 <body>
@@ -53,7 +23,7 @@
                     <div class="profile-info">
                         <h2>{user.username}</h2>
                         <div class="profile-email">{user.email}</div>
-                        <div class="profile-uuid">{user.uuid}</div>
+                        <div class="profile-uuid" id="user-uuid">{user.uuid}</div>
                     </div>
                 </div>
 
@@ -96,20 +66,26 @@
                     </tr>
                     </thead>
                     <tbody>
-                        {#for key in keys}
+                        {#if keys.size() > 0}
+                            {#for key in keys}
+                                <tr>
+                                    <td>{key.issued_date}</td>
+                                    <td>{key.key_type}</td>
+                                    <td><span class="key-fingerprint">SHA256:{key.fingerprint}</span></td>
+                                    <td>{key.server}</td>
+                                    <td><button class="btn btn-danger revokeKeyButton" data-uid="{key.key_uid}" data-server="{key.server}">Revoke</button></td>
+                                </tr>
+                            {/for}
+                        {#else}
                             <tr>
-                                <td>{key.created}</td>
-                                <td>{key.key_type}</td>
-                                <td><span class="key-fingerprint">SHA256:{key.fingerprint}</span></td>
-                                <td>{key.server}</td>
-                                <td><button class="btn btn-danger">Revoke</button></td>
+                                <td colspan="5" class="empty-state text-center text-gray-500 italic">No keys found</td>
                             </tr>
-                        {/for}
+                        {/if}
                     </tbody>
                 </table>
 
                 <div class="action-buttons">
-                    <button class="btn btn-primary" onclick="saveUserProfile()">Save Changes</button>
+                    <button class="btn btn-primary" id="saveChangesButton" data-uuid="{user.uuid}">Save Changes</button>
                     <button class="btn btn-secondary" disabled>Reset Password</button>
                     <button class="btn btn-danger" disabled>Disable Account</button>
                 </div>

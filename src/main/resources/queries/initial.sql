@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS "users" (
 );
 
 CREATE TABLE IF NOT EXISTS "ssh_keys" (
-  "id" SERIAL PRIMARY KEY,
+  "uid" TEXT PRIMARY KEY,
   "user_uuid" TEXT NOT NULL,
   "key_type" VARCHAR(50) NOT NULL,
   "server" TEXT NOT NULL,

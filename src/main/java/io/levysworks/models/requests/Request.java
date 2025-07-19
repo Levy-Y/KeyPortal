@@ -1,4 +1,4 @@
-package io.levysworks.models;
+package io.levysworks.models.requests;
 
 import java.time.Instant;
 

@@ -3,18 +3,18 @@ package io.levysworks.endpoints;
 import io.levysworks.beans.DatabaseManager;
 import io.levysworks.beans.LogManager;
 import io.levysworks.beans.PollManager;
-import io.levysworks.models.ActionRequest;
-import io.levysworks.models.Request;
-import io.levysworks.models.UserRequest;
+import io.levysworks.models.requests.ActionRequest;
+import io.levysworks.models.requests.Request;
+import io.levysworks.models.requests.UserRequest;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 @Path("/api/v1/secured")
 public class AdminEndpoint {
@@ -32,7 +32,7 @@ public class AdminEndpoint {
     @PATCH
     @Path("/requests/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response handleRequestAction(@PathParam("id") Integer id, ActionRequest body) throws SQLException, NoSuchAlgorithmException {
+    public Response handleRequestAction(@PathParam("id") Integer id, ActionRequest body) throws SQLException, NoSuchAlgorithmException, IOException, TimeoutException {
         String action = body.action();
 
         if (id < 0 || action == null || action.isBlank() ||
@@ -47,7 +47,7 @@ public class AdminEndpoint {
         }
 
         if (action.equals("approve")) {
-            pollManager.addKeyForAgent(request.user_uuid(), request.server(), request.key());
+            pollManager.addKeyForAgent(request.server(), request.key());
             dbManager.addActiveKey(request.user_uuid(), request.server(), request.key());
         }
 
@@ -60,6 +60,29 @@ public class AdminEndpoint {
         logManager.log("Request " + actionTmp, "A request with id: " + id + " has been " + actionTmp + " by " + adminName);
 
         return Response.status(Response.Status.NO_CONTENT).build();
+    }
+
+    @DELETE
+    @Path("/remove/{uid}")
+    public Response handleRemoveRequest(@PathParam("uid") String uid, @QueryParam("agent") String agent) throws SQLException, TimeoutException {
+        if (agent == null || agent.isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+
+        if (!dbManager.checkKeyExists(uid)) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        try {
+            pollManager.removeKeyFromAgent(agent, uid);
+            dbManager.removeKeyByUID(agent, uid);
+
+            logManager.log("Revoked", "Revoked user key with " + uid + " from " + agent);
+
+            return Response.status(Response.Status.NO_CONTENT).build();
+        } catch (IOException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PATCH

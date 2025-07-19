@@ -11,6 +11,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Base64;
 
 public class KeyGenerator {
     public static SSHKeyPair RegisterKeypair() throws IOException, InterruptedException {
@@ -49,12 +51,17 @@ public class KeyGenerator {
         public String getPublicKey() { return publicKey; }
     }
 
-    public static SSHKeyPair generateKeyPair(String keyType, int keySize, String comment) throws IOException, InterruptedException {
+    public static SSHKeyPair generateKeyPair(String keyType, int keySize) throws IOException, InterruptedException {
         String tempDir = System.getProperty("java.io.tmpdir");
         String keyPath = tempDir + File.separator + "temp_ssh_key_" + System.currentTimeMillis();
 
+        SecureRandom random = new SecureRandom();
+        byte[] bytes = new byte[9];
+        random.nextBytes(bytes);
+        String uid = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+
         ProcessBuilder pb = new ProcessBuilder();
-        pb.command("ssh-keygen", "-t", keyType, "-b", String.valueOf(keySize), "-C", comment, "-f", keyPath, "-N", "");
+        pb.command("ssh-keygen", "-t", keyType, "-b", String.valueOf(keySize), "-C", uid, "-f", keyPath, "-N", "");
 
         Process process = pb.start();
         int exitCode = process.waitFor();
@@ -82,14 +89,14 @@ public class KeyGenerator {
     }
 
     public static SSHKeyPair generateRSAKeyPair(int keySize) throws IOException, InterruptedException {
-        return generateKeyPair("rsa", keySize, "generated-by-java");
+        return generateKeyPair("rsa", keySize);
     }
 
     public static SSHKeyPair generateECDSAKeyPair() throws IOException, InterruptedException {
-        return generateKeyPair("ecdsa", 256, "generated-by-java");
+        return generateKeyPair("ecdsa", 256);
     }
 
     public static SSHKeyPair generateEd25519KeyPair() throws IOException, InterruptedException {
-        return generateKeyPair("ed25519", 256, "generated-by-java");
+        return generateKeyPair("ed25519", 256);
     }
 }

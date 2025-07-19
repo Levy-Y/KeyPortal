@@ -38,10 +38,10 @@ public class AdminPage {
     @Produces(MediaType.TEXT_HTML)
     public Response admin(@QueryParam("query_user") Optional<String> query_user) throws SQLException {
         if (query_user.isPresent()) {
-            UserProfile user = dbManager.getUserByUUID(query_user.get());
+            CompositeUserData user = dbManager.getUserByUUID(query_user.get());
 
             if (user != null) {
-                List<UserKey> keys = dbManager.getUserKeysByUUID(query_user.get());
+                List<CompositeUserData> keys = dbManager.getUserKeysByUUID(query_user.get());
 
                 return Response.ok(
                         profile
@@ -64,10 +64,10 @@ public class AdminPage {
             int userCount = dbManager.getUserCount();
             int serverCount = agentsConfig.servers().size();
 
-            List<RequestFullTemplate> rft = dbManager.getRequestsForTemplate();
-            List<LogEntry> le = dbManager.getLogs(20);
-            List<KeysFullTemplate> kft = dbManager.getKeysForTemplate();
-            List<UsersFullTemplate> uft = dbManager.getUsersForTemplate();
+            List<CompositeUserData> requests = dbManager.getRequestsForTemplate();
+            List<CompositeUserData> keys = dbManager.getKeysForTemplate();
+            List<CompositeUserData> users = dbManager.getUsersForTemplate();
+            List<CompositeUserData> logs = dbManager.getLogs(20);
 
             return Response.ok(
                     admin
@@ -75,10 +75,10 @@ public class AdminPage {
                             .data("pendingRequestCount", pendingRequestCount)
                             .data("userCount", userCount)
                             .data("serverCount", serverCount)
-                            .data("requests", rft)
-                            .data("logs", le)
-                            .data("keys", kft)
-                            .data("users", uft)
+                            .data("requests", requests)
+                            .data("logs", logs)
+                            .data("keys", keys)
+                            .data("users", users)
                             .render()
             ).build();
         }
