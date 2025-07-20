@@ -20,30 +20,26 @@
 
             event.target.classList.add('active');
         }
-
-        async function handleRequest(requestId, action) {
-            let request = await fetch("http://localhost:8080/api/v1/secured/requests/" + requestId, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ action: action }),
-            });
-
-            if (request.ok) {
-                alert(action + " action on " + requestId + " was successful.");
-            }
-
-            location.reload();
-        }
-
     </script>
 </head>
 <body>
 <div class="admin-container">
     <div class="container">
         <div class="header">
-            <h1>SSH Key Manager</h1>
+            <h1>SSH Key Management</h1>
+            <div class="header-actions">
+                {#if healthy != true}
+                    <div class="status-indicator-unhealthy">
+                        <div class="status-dot-unhealthy"></div>
+                        Systems Unhealthy
+                    </div>
+                {#else}
+                    <div class="status-indicator-healthy">
+                        <div class="status-dot-healthy"></div>
+                        Systems Healthy
+                    </div>
+                {/if}
+            </div>
         </div>
 
         <div class="tabs">
@@ -144,8 +140,8 @@
                                     <td class="server-list">{request.server}</td>
                                     <td>{request.issued_date}</td>
                                     <td>
-                                        <button class="btn btn-approve" type="button" onclick="handleRequest('{request.request_id}', 'approve')">Approve</button>
-                                        <button class="btn btn-decline" type="button" onclick="handleRequest('{request.request_id}', 'decline')">Decline</button>
+                                        <button class="btn btn-approve approveKeyButton" type="button" data-request_id="{request.request_id}" data-action="approve">Approve</button>
+                                        <button class="btn btn-decline approveKeyButton" type="button" data-request_id="{request.request_id}" data-action="decline">Decline</button>
                                     </td>
                                 </tr>
                             {/for}
@@ -244,6 +240,14 @@
                                     </td>
                                 </tr>
                             {/for}
+                            <tr>
+                                <td colspan="5" class="empty-state text-center" onclick="window.location.href='/management/admin/create'" style="cursor: pointer;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                                    </svg>
+                                    Add user
+                                </td>
+                            </tr>
                         {#else}
                             <tr>
                                 <td colspan="5" class="empty-state text-center text-gray-500 italic">No users to show</td>

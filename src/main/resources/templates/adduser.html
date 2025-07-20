@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSH Admin - Add User</title>
+
+        {#bundle /}
+</head>
+<body>
+<div class="profile-container">
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <button class="btn-back" onclick="location.href = '/management/admin'">← Back</button>
+                <h1>SSH Self-Service Admin</h1>
+            </div>
+        </div>
+
+        <form id="createUserForm" class="content">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="new-first-name-input">First Name</label>
+                    <input id="new-first-name-input" type="text" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-last-name-input">Last Name</label>
+                    <input id="new-last-name-input" type="text" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="new-email-input">Email</label>
+                    <input id="new-email-input" type="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-department-input">Department</label>
+                    <input id="new-department-input" type="text">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="new-notes-input">Notes</label>
+                <textarea id="new-notes-input" placeholder="Admin notes about this user..."></textarea>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" type="submit">Create User</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

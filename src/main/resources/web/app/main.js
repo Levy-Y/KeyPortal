@@ -9,52 +9,74 @@ async function saveUserProfile() {
 
     let uuid = document.getElementById("saveChangesButton").dataset.uuid
 
-    let request = await fetch("http://localhost:8080/api/v1/secured/users/" + uuid, {
-        method: 'PATCH',
+    axios.patch(`http://localhost:8080/api/v1/secured/users/${uuid}`, {
+        first_name: first_name,
+        last_name: last_name,
+        email: email,
+        department: department,
+        notes: notes
+    }, {
         headers: {
             'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            first_name: first_name,
-            last_name: last_name,
-            email: email,
-            department: department,
-            notes: notes
-        }),
-    });
+        }
+    }).then(response => {
 
-    if (request.ok) {
-        alert("Updated user with UUID: " + uuid);
-        location.reload();
-    } else if (request.status === 500) {
-        alert("No user found with UUID: " + uuid);
-    }
+        if (response.ok) {
+            alert("Updated user with UUID: " + uuid);
+            location.reload();
+        } else {
+            alert("Failed to update user with UUID: " + uuid);
+        }
+    }).catch(error => {
+        if (error.response && error.response.status === 500) {
+            alert("No user found with UUID: " + uuid);
+        }
+    });
 
 }
 
-async function requestKey(server, user) {
-    try {
-        const response = await axios.get("/api/v1/register?server=" + server + "&user=" + user, {
-            responseType: 'arraybuffer'
-        });
+async function approveKey(requestId, action) {
+    await axios.patch(`http://localhost:8080/api/v1/secured/requests/${requestId}`, {
+        action: action
+    }, {
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(response => {
+        if (response.status === 204) {
+            alert(`${action} action on ${requestId} was successful.`);
+            location.reload();
+        }
+    }).catch(error => {
+        console.error(error);
+    });
+}
 
+async function requestKey(server, user) {
+    let privateKey = null
+
+    await axios.get("/api/v1/register?server=" + server + "&user=" + user, {
+        responseType: 'arraybuffer'
+    }).then(response => {
         if (response.status !== 200) {
             throw new Error("SSH Key request failed, with status: " + response.status);
         }
 
-        const privateKey = new TextDecoder().decode(response.data);
-        return { privateKey };
-    } catch (error) {
+        const decoder = new TextDecoder('utf-8');
+        privateKey = decoder.decode(new Uint8Array(response.data));
+    }).catch(error => {
         if (axios.isAxiosError(error) && error.response && error.response.status === 429) {
             throw new Error("Rate limit exceeded");
+        } else if (error.response.status === 401) {
+            throw new Error("Invalid user identifier");
         }
-        throw error;
-    }
+    });
+
+    return { privateKey };
 }
 
 async function revokeKey(server, uid) {
-    try {
-        const response = await axios.delete(`/api/v1/secured/remove/${uid}?agent=${server}`);
+    await axios.delete(`/api/v1/secured/remove/${uid}?agent=${server}`).then(response => {
         if (response.status === 204) {
             alert("Revoked user key with UID: " + uid);
             location.reload();
@@ -62,7 +84,7 @@ async function revokeKey(server, uid) {
             alert("Error occurred while trying to revoke user key with UID: " + uid);
             throw new Error(`Unexpected status: ${response.status}`);
         }
-    } catch (error) {
+    }).catch(error => {
         if (axios.isAxiosError(error)) {
             if (error.response?.status === 500) {
                 throw new Error("Internal Server Error");
@@ -70,7 +92,7 @@ async function revokeKey(server, uid) {
             throw new Error(`Failed to revoke key: ${error.response?.status}`);
         }
         throw error;
-    }
+    });
 }
 
 function gotoUserProfile(username) {
@@ -91,9 +113,50 @@ document.addEventListener("DOMContentLoaded", () => {
             const uid = event.target.dataset.uid;
             const server = event.target.dataset.server;
             revokeKey(server, uid)
+        } else if (event.target.classList.contains('approveKeyButton')) {
+            const requestId = event.target.dataset.request_id;
+            const action = event.target.dataset.action;
+            approveKey(requestId, action)
         }
     });
 });
+
+let createUserForm = document.getElementById("createUserForm");
+if (createUserForm) {
+    createUserForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const firstName = document.getElementById("new-first-name-input").value.trim();
+        const lastName = document.getElementById("new-last-name-input").value.trim();
+        const email = document.getElementById("new-email-input").value.trim();
+        const department = document.getElementById("new-department-input").value.trim();
+        const notes = document.getElementById("new-notes-input").value.trim();
+
+        const userData = {
+            first_name: firstName,
+            last_name: lastName,
+            email: email,
+            department: department,
+            notes: notes
+        };
+
+        try {
+            const response = await axios.post("/api/v1/secured/users/create", userData);
+            if (response.status === 204) {
+                alert("Created user profile");
+                location.href = "/management/admin";
+            } else {
+                alert("Unexpected status code: " + response.status);
+            }
+        } catch (error) {
+            if (axios.isAxiosError(error) && error.response?.status === 500) {
+                alert("Server error while creating user");
+            } else {
+                alert("Failed to create user");
+            }
+        }
+    });
+}
 
 
 let sshKeyForm = document.getElementById('sshKeyForm');
@@ -116,15 +179,14 @@ if (sshKeyForm) {
         try {
             const keyData = await requestKey(server, userId);
 
-            if (!keyData || !keyData.privateKey) {
-                throw new Error('Invalid response: missing private key');
-            }
-
             document.getElementById('selectedServer').textContent = server;
             document.getElementById('selectedUserId').textContent = userId;
             document.getElementById('generatedTime').textContent = new Date().toLocaleString();
 
-            const privateKeyBlob = new Blob([keyData.privateKey], {type: 'text/plain'});
+            const privateKeyBlob = new Blob([keyData.privateKey],
+                {
+                    type: 'application/x-pem-file;charset=utf-8'
+                });
             document.getElementById('downloadPrivateKey').href = URL.createObjectURL(privateKeyBlob);
             document.getElementById('downloadPrivateKey').download = `${userId}_${server}_private_key.pem`;
 

@@ -444,8 +444,10 @@ public class DatabaseManager {
     }
 
     public List<CompositeUserData> getLogs(int limit) throws SQLException {
-        try (Statement stmt = conn.createStatement()) {
-            ResultSet rs = stmt.executeQuery("SELECT * FROM audit_log LIMIT " + limit + ";");
+        try (PreparedStatement stmt = conn.prepareStatement("SELECT * FROM audit_log ORDER BY timestamp DESC LIMIT ?")) {
+            stmt.setInt(1, limit);
+            ResultSet rs = stmt.executeQuery();
+
             List<CompositeUserData> entries = new ArrayList<>();
 
             while (rs.next()) {
@@ -480,6 +482,24 @@ public class DatabaseManager {
                 DELETE FROM requests WHERE id = ?
                 """)) {
             stmt.setInt(1, id);
+            stmt.executeUpdate();
+        }
+    }
+
+    public void addUser(String first_name, String last_name, String email, String department, String notes) throws SQLException {
+        try (PreparedStatement stmt = conn.prepareStatement("""
+                INSERT INTO users (uuid, first_name, last_name, email, department, notes)  VALUES (?, ?, ?, ?, ?, ?)
+                """)) {
+
+            String uuid = UUID.randomUUID().toString();
+
+            stmt.setString(1, uuid);
+            stmt.setString(2, first_name);
+            stmt.setString(3, last_name);
+            stmt.setString(4, email);
+            stmt.setString(5, department);
+            stmt.setString(6, notes);
+
             stmt.executeUpdate();
         }
     }

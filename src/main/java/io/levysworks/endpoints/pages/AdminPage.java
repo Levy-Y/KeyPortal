@@ -1,5 +1,6 @@
 package io.levysworks.endpoints.pages;
 
+import io.levysworks.beans.HealthManager;
 import io.levysworks.configs.AgentsConfig;
 import io.levysworks.beans.DatabaseManager;
 import io.levysworks.models.*;
@@ -13,7 +14,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.sql.Timestamp;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,6 +35,9 @@ public class AdminPage {
 
     @Inject
     DatabaseManager dbManager;
+
+    @Inject
+    HealthManager healthManager;
 
     @GET
     @Produces(MediaType.TEXT_HTML)
@@ -64,6 +69,8 @@ public class AdminPage {
             int userCount = dbManager.getUserCount();
             int serverCount = agentsConfig.servers().size();
 
+            boolean isSystemHealthy = healthManager.isSystemHealthy();
+
             List<CompositeUserData> requests = dbManager.getRequestsForTemplate();
             List<CompositeUserData> keys = dbManager.getKeysForTemplate();
             List<CompositeUserData> users = dbManager.getUsersForTemplate();
@@ -71,6 +78,7 @@ public class AdminPage {
 
             return Response.ok(
                     admin
+                            .data("healthy", isSystemHealthy)
                             .data("activeKeyCount", activeKeys)
                             .data("pendingRequestCount", pendingRequestCount)
                             .data("userCount", userCount)
