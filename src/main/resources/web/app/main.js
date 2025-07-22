@@ -9,7 +9,7 @@ async function saveUserProfile() {
 
     let uuid = document.getElementById("saveChangesButton").dataset.uuid
 
-    axios.patch(`http://localhost:8080/api/v1/secured/users/${uuid}`, {
+    await axios.patch(`http://localhost:8080/api/v1/secured/users/${uuid}`, {
         first_name: first_name,
         last_name: last_name,
         email: email,
@@ -21,7 +21,7 @@ async function saveUserProfile() {
         }
     }).then(response => {
 
-        if (response.ok) {
+        if (response.status === 204) {
             alert("Updated user with UUID: " + uuid);
             location.reload();
         } else {
@@ -95,14 +95,40 @@ async function revokeKey(server, uid) {
     });
 }
 
-function gotoUserProfile(username) {
-    location.href = '/management/admin?query_user=' + username;
+async function deleteUserProfile() {
+    let uuid = document.getElementById("saveChangesButton").dataset.uuid;
+
+    await axios.delete(`/api/v1/secured/users/delete?uuid=` + uuid).then(response => {
+        if (response.status === 204) {
+            alert("Deleted user with UUID: " + uuid);
+            location.href = "/management/admin";
+        } else if (response.status === 404) {
+            alert("User not found with UUID: " + uuid);
+        } else {
+            alert("Error deleting user with UUID: " + uuid);
+        }
+    }).catch(error => {
+        if (axios.isAxiosError(error)) {
+            if (error.response && error.response.status === 500) {
+                throw new Error("Internal Server Error");
+            }
+        }
+    })
+}
+
+function gotoUserProfile(uuid) {
+    location.href = '/management/admin/user/' + uuid;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     let saveChangesButton = document.getElementById("saveChangesButton");
     if (saveChangesButton) {
         saveChangesButton.onclick = saveUserProfile;
+    }
+
+    let deleteUserButton = document.getElementById("deleteUserButton");
+    if (deleteUserButton) {
+        deleteUserButton.onclick = deleteUserProfile;
     }
 
     document.addEventListener("click", (event) => {

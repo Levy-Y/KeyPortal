@@ -11,6 +11,9 @@ import jakarta.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Endpoint serving the SSH Key request page for users
+ */
 @Path("/")
 public class RootPage {
 
@@ -20,6 +23,12 @@ public class RootPage {
     @Inject
     AgentsConfig agentsConfig;
 
+    /**
+     * Handles GET requests to the requests page
+     * <p>
+     * Renders a simple form for requesting an SSH key
+     * @return HTML response with rendered request view
+     */
     @GET
     @Produces(MediaType.TEXT_HTML)
     public String root() {

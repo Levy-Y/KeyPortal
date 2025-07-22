@@ -32,12 +32,3 @@ quarkus:
 servers-wrapper:
   servers:
     - name: east-1
-      poll-key: 1234567ABC
-    - name: east-2
-      poll-key: 12356789ABD
-    - name: west-1
-      poll-key: 1234589CD
-    - name: west-2
-      poll-key: 1236789ABD
-    - name: west-3
-      poll-key: 12365489ABD

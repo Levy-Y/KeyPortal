@@ -76,31 +76,25 @@
                 <table>
                     <thead>
                     <tr>
-                        <th>Time</th>
-                        <th>User</th>
-                        <th>Action</th>
-                        <th>Status</th>
+                        <th>Timestamp</th>
+                        <th>Title</th>
+                        <th>Message</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <tr>
-                        <td>14:30</td>
-                        <td>john.doe@company.com</td>
-                        <td>Key request</td>
-                        <td><span class="badge badge-pending">Pending</span></td>
-                    </tr>
-                    <tr>
-                        <td>13:45</td>
-                        <td>jane.smith@company.com</td>
-                        <td>Key approved</td>
-                        <td><span class="badge badge-active">Active</span></td>
-                    </tr>
-                    <tr>
-                        <td>11:20</td>
-                        <td>mike.wilson@company.com</td>
-                        <td>Key revoked</td>
-                        <td><span class="badge badge-revoked">Revoked</span></td>
-                    </tr>
+                    {#if logs.size() > 0}
+                        {#for log in logs.subList(0, 3)}
+                            <tr>
+                                <td>{log.log_timestamp}</td>
+                                <td>{log.log_title}</td>
+                                <td>{log.log_message}</td>
+                            </tr>
+                        {/for}
+                    {#else}
+                        <tr>
+                            <td colspan="3" class="empty-state text-center text-gray-500 italic">No recent activity</td>
+                        </tr>
+                    {/if}
                     </tbody>
                 </table>
             </div>
@@ -264,13 +258,19 @@
                     <input type="text" placeholder="Search audit log...">
                 </div>
                 <div style="max-height: 500px; overflow-y: auto;">
-                    {#for log in logs}
+                    {#if logs.size() > 0}
+                        {#for log in logs}
+                            <div class="audit-entry">
+                                <div class="audit-time">{log.log_timestamp}</div>
+                                <div class="audit-action">{log.log_title}</div>
+                                <div class="audit-details">{log.log_message}</div>
+                            </div>
+                        {/for}
+                    {#else}
                         <div class="audit-entry">
-                            <div class="audit-time">{log.log_timestamp}</div>
-                            <div class="audit-action">{log.log_title}</div>
-                            <div class="audit-details">{log.log_message}</div>
+                            <h2>No logs to show at this time.</h2>
                         </div>
-                    {/for}
+                    {/if}
                 </div>
             </div>
         </div>

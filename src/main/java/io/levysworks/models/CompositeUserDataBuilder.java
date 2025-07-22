@@ -2,6 +2,10 @@ package io.levysworks.models;
 
 import java.sql.Timestamp;
 
+/**
+ * Builder for {@link CompositeUserData}, allowing incremental construction
+ * of user-related composite data with optional fields.
+ */
 public class CompositeUserDataBuilder {
     private String initials = null;
     private String username = null;
@@ -136,6 +140,11 @@ public class CompositeUserDataBuilder {
         return this;
     }
 
+    /**
+     * Builds a {@link CompositeUserData} instance using the set values.
+     *
+     * @return a new {@code CompositeUserData} instance
+     */
     public CompositeUserData build() {
         return new CompositeUserData(initials, username, uuid, first_name, last_name, email, department, notes, key_count, servers, request_id, key_type, key_uid, server, public_key, fingerprint, accepted_by, issued_date, valid_until, log_title, log_message, log_timestamp);
     }

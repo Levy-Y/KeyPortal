@@ -1,6 +1,4 @@
--- Just for reference.
--- This sql script is never used,
--- just for demonstration, and transparency purposes!
+-- Ran by mybatis on startup, if the database doesn't exist
 
 CREATE TABLE IF NOT EXISTS "users" (
   "uuid" TEXT UNIQUE NOT NULL PRIMARY KEY,

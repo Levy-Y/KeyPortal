@@ -16,6 +16,9 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * Endpoint reserved for admin actions
+ */
 @Path("/api/v1/secured")
 public class AdminEndpoint {
     @Inject
@@ -29,6 +32,17 @@ public class AdminEndpoint {
     @Inject
     jakarta.ws.rs.core.Request request;
 
+    /**
+     * Handles PATCH request
+     * <p>
+     * Approves or declines a user request based on what the request body contains
+     *
+     * @param id ID of the {@code request} to work on
+     * @param body The body containing the action
+     * @return a {@link Response} with {@code 204 No Content} if successful, or an appropriate error code
+     * @throws SQLException if a database access error occurs
+     * @throws NoSuchAlgorithmException in case the {@link DatabaseManager#addActiveKey} fails to fingerprint the public key
+     */
     @PATCH
     @Path("/requests/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -66,6 +80,16 @@ public class AdminEndpoint {
         return Response.status(Response.Status.NO_CONTENT).build();
     }
 
+    /**
+     * Handles DELETE request
+     * <p>
+     * Revokes the key with matching {@code uid} from the matching {@code agent}
+     * @param uid The UID of the key
+     * @param agent Name of the agent
+     * @return a {@link Response} with {@code 204 No Content} if successful, or an appropriate error code
+     * @throws SQLException if a database access error occurs
+     * @throws TimeoutException if the RabbitMQ request times out
+     */
     @DELETE
     @Path("/remove/{uid}")
     public Response handleRemoveRequest(@PathParam("uid") String uid, @QueryParam("agent") String agent) throws SQLException, TimeoutException {
@@ -89,6 +113,15 @@ public class AdminEndpoint {
         }
     }
 
+    /**
+     * Handles PATCH request
+     * <p>
+     * Updates the user identified by {@code uuid} with data from the {@link UserRequest}
+     * @param uuid The UUID of the updatable user
+     * @param body A {@link UserRequest} object containing the information to update the user to
+     * @return a {@link Response} with {@code 204 No Content} if successful, or an appropriate error code
+     * @throws SQLException if a database access error occurs
+     */
     @PATCH
     @Path("/users/{uuid}")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -103,11 +136,19 @@ public class AdminEndpoint {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
         }
 
-        logManager.log("Updated", "Updated user with UUID: " + uuid);
+        logManager.log("User Profile Updated", "Updated user with UUID: " + uuid);
 
-        return Response.status(204).build();
+        return Response.status(Response.Status.NO_CONTENT).build();
     }
 
+    /**
+     * Handles POST request
+     * <p>
+     * Creates a new user with data from the {@link UserRequest}
+     * @param body A {@link UserRequest} object containing the information to create the user from
+     * @return a {@link Response} with {@code 204 No Content} if successful, or an appropriate error code
+     * @throws SQLException if a database access error occurs
+     */
     @POST
     @Path("/users/create")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -123,6 +164,33 @@ public class AdminEndpoint {
         }
 
         logManager.log("Created", "New user created for email: " + body.email());
+
+        return Response.status(204).build();
+    }
+
+    /**
+     * Handles DELETE request
+     * <p>
+     * Deletes the user with a matching {@code uuid}
+     * @param uuid UUID of the user to delete
+     * @return a {@link Response} with {@code 204 No Content} if successful, or an appropriate error code
+     * @throws SQLException if a database access error occurs
+     */
+    @DELETE
+    @Path("/users/delete")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response handleRemoveUserAction(@QueryParam("uuid") String uuid) throws SQLException {
+        if (uuid == null || uuid.isBlank() ) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+
+        try {
+            dbManager.removeUser(uuid);
+        } catch (SQLException ex) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        logManager.log("Deleted", "User deleted with UUID: " + uuid);
 
         return Response.status(204).build();
     }
