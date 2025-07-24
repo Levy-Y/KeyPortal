@@ -9,7 +9,7 @@ async function saveUserProfile() {
 
     let uuid = document.getElementById("saveChangesButton").dataset.uuid
 
-    await axios.patch(`http://localhost:8080/api/v1/secured/users/${uuid}`, {
+    await axios.patch(`/api/v1/secured/users/${uuid}`, {
         first_name: first_name,
         last_name: last_name,
         email: email,
@@ -36,7 +36,7 @@ async function saveUserProfile() {
 }
 
 async function approveKey(requestId, action) {
-    await axios.patch(`http://localhost:8080/api/v1/secured/requests/${requestId}`, {
+    await axios.patch(`/api/v1/secured/requests/${requestId}`, {
         action: action
     }, {
         headers: {
@@ -69,6 +69,8 @@ async function requestKey(server, user) {
             throw new Error("Rate limit exceeded");
         } else if (error.response.status === 401) {
             throw new Error("Invalid user identifier");
+        } else if (error.response.status === 500) {
+            throw new Error("Internal server error");
         }
     });
 

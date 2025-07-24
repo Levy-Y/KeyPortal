@@ -31,4 +31,4 @@ quarkus:
 
 servers-wrapper:
   servers:
-    - name: east-1
+    - name: server-1

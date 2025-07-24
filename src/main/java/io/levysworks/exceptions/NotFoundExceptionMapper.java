@@ -2,16 +2,25 @@ package io.levysworks.exceptions;
 
 import io.quarkus.qute.Template;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 
-public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundException> {
+@Provider
+public class NotFoundExceptionMapper implements ExceptionMapper<WebApplicationException> {
     @Inject
-    Template notfound;
+    Template pagenotfound;
 
     @Override
-    public Response toResponse(NotFoundException exception) {
-        return Response.status(Response.Status.NOT_FOUND).entity(notfound.render()).build();
+    public Response toResponse(WebApplicationException exception) {
+        if (exception.getResponse().getStatus() == 404) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(pagenotfound.render())
+                    .type("text/html")
+                    .build();
+        }
+
+        return exception.getResponse();
     }
 }

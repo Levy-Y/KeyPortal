@@ -29,8 +29,6 @@ public class AdminEndpoint {
 
     @Inject
     LogManager logManager;
-    @Inject
-    jakarta.ws.rs.core.Request request;
 
     /**
      * Handles PATCH request

@@ -25,14 +25,14 @@ import java.time.temporal.ChronoUnit;
  * Rate limited to 1 request per day
  */
 @Path("/api/v1/register")
-@RateLimit(value = 1, window = 1, windowUnit = ChronoUnit.DAYS)
+//@RateLimit(value = 1, window = 1, windowUnit = ChronoUnit.DAYS)
 @APIResponse(responseCode = "429", description = "Rate limit exceeded")
 public class RegisterEndpoint {
     @Inject
-    PollManager pollManager;
+    public PollManager pollManager;
 
     @Inject
-    DatabaseManager dbManager;
+    public DatabaseManager dbManager;
 
     /**
      * Generates an OpenSSH-compliant keypair and returns the private key as a downloadable file.

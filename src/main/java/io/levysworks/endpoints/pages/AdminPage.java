@@ -28,7 +28,7 @@ public class AdminPage {
     Template adduser;
 
     @Inject
-    Template notfound;
+    Template usernotfound;
 
     @Inject
     AgentsConfig agentsConfig;
@@ -62,9 +62,14 @@ public class AdminPage {
         List<CompositeUserData> users = dbManager.getUsersForTemplate();
         List<CompositeUserData> logs = dbManager.getLogs(20);
 
+        List<CompositeUserData> recentActivity = logs.size() >= 3
+                ? logs.subList(0, 3)
+                : logs;
+
         return Response.ok(
                 admin
                         .data("healthy", isSystemHealthy)
+                        .data("recents", recentActivity)
                         .data("activeKeyCount", activeKeys)
                         .data("pendingRequestCount", pendingRequestCount)
                         .data("userCount", userCount)
@@ -103,7 +108,7 @@ public class AdminPage {
             ).build();
         } else {
             return Response.ok(
-                    notfound
+                    usernotfound
                             .data("uuid", query_user)
                             .render()
             ).build();

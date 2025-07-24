@@ -1,5 +1,7 @@
 package io.levysworks.beans;
 
+import io.quarkus.runtime.Startup;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
@@ -14,6 +16,8 @@ import java.sql.SQLException;
  * Bean for managing application health status.
  * Provides health check methods used for internal monitoring.
  */
+@RegisterForReflection
+@Startup
 @ApplicationScoped
 public class HealthManager {
     @Inject

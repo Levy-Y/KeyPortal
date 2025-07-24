@@ -39,9 +39,10 @@ services:
 
   keyportal:
     image: keyportal-server
+    pull_policy: build
     build:
       context: .
-      dockerfile: src/main/docker/Dockerfile.native-micro
+      dockerfile: src/main/docker/Dockerfile.native-full
     restart: always
     networks:
       - keyportal-internal
@@ -53,14 +54,17 @@ services:
       rabbitmq:
         condition: service_started
     environment:
-      - RABBITMQCLIENT_USERNAME=${RABBITMQ_USER}
-      - RABBITMQCLIENT_PASSWORD=${RABBITMQ_PASS}
-      - RABBITMQCLIENT_HOSTNAME=rabbitmq
-      - RABBITMQCLIENT_PORT=5672
+      - QUARKUS_LOG_LEVEL=DEBUG
+      - QUARKUS_LOG_CATEGORY__IO_LEVYSWORKS__LEVEL=DEBUG
+      - QUARKUS_RABBITMQCLIENT_USERNAME=${RABBITMQ_USER}
+      - QUARKUS_RABBITMQCLIENT_PASSWORD=${RABBITMQ_PASS}
+      - QUARKUS_RABBITMQCLIENT_HOSTNAME=rabbitmq
+      - QUARKUS_RABBITMQCLIENT_PORT=5672
       - QUARKUS_DATASOURCE_USERNAME=${POSTGRES_USER}
       - QUARKUS_DATASOURCE_PASSWORD=${POSTGRES_PASS}
       - QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
-      - SERVERS_WRAPPER_SERVERS_0_NAME=east-1
+      - SERVERS_WRAPPER_SERVERS_0__NAME=east-1
+      - SERVERS_WRAPPER_SERVERS_1__NAME=west-1
       # - SERVERS_WRAPPER_SERVERS_(incrementing index of the agent)_NAME=desired-name
       # agent names must match with the remote keyportal-agent's identifier
 
