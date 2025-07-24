@@ -103,5 +103,6 @@ This project is licensed under the AGPL-3.0 License.
 ## Author
 
 **Levente Hagymási**
-GitHub: [@Levy-Y](https://github.com/Levy-Y)  
+<br>
+GitHub: [@Levy-Y](https://github.com/Levy-Y) <br>
 LinkedIn: [in/leventehagymasi](https://www.linkedin.com/in/leventehagymasi)
