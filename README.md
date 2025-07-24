@@ -1,3 +1,5 @@
+![wakatime](https://wakatime.com/badge/user/97539eb3-1c04-4900-b9fa-d76edc9c94da/project/aeb85c01-aa12-4794-ba2f-8525590c2bf8.svg?style=for-the-badge)
+![Quarkus](https://img.shields.io/badge/quarkus-%234794EB.svg?style=for-the-badge&logo=quarkus&logoColor=white) ![RabbitMQ](https://img.shields.io/badge/Rabbitmq-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white) ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
 
 # Keyportal (Server)
 
@@ -70,9 +72,11 @@ After setup completes successfully, the server will be running locally. You can 
 
 Environment variables in `.env` control:
 
--   Database credentials, and database name
+- Database credentials and database name  
+- RabbitMQ credentials
 
--   RabbitMQ credentials
+Add the server names in the `docker-compose.yml` file's `keyportal` service `environment` section that match the agent names you configured.  
+If you have not configured any agents yet, configure at least one according to the [guide](https://github.com/Levy-Y/KeyPortal-Agent)
 
 ## Troubleshooting
 
