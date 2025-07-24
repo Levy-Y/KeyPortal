@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"io.levysworks.beans"},{"l":"io.levysworks.configs"},{"l":"io.levysworks.endpoints"},{"l":"io.levysworks.endpoints.pages"},{"l":"io.levysworks.exceptions"},{"l":"io.levysworks.models"},{"l":"io.levysworks.models.requests"},{"l":"io.levysworks.utilities"}];updateSearchResults();

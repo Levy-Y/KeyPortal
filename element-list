@@ -1,0 +1,8 @@
+io.levysworks.beans
+io.levysworks.configs
+io.levysworks.endpoints
+io.levysworks.endpoints.pages
+io.levysworks.exceptions
+io.levysworks.models
+io.levysworks.models.requests
+io.levysworks.utilities
