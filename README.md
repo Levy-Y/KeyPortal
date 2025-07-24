@@ -80,7 +80,7 @@ Common issues:
 - Port conflicts: Ensure port 80 is available or modify the docker-compose.yml
 - Database errors: Verify PostgreSQL credentials in .env
 
-## API Access
+## API Documentation
 The documentation can be found [here](https://Levy-Y.github.io/KeyPortal/)
 
 A system architecture diagram is available [here](/media/KeyPortal_diagram.png) to illustrate the key components and their interactions.
